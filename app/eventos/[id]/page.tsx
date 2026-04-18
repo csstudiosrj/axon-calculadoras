@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { EventData } from "@/types/monetization";
@@ -24,10 +24,11 @@ const CALCULADORAS_LISTA =[
   { id: "sonorizacao", nome: "Sonorização", desc: "PAs e delays" },
 ];
 
-export default function EventoHubPage() {
+// Separamos o conteúdo em um sub-componente para o Next.js não reclamar
+function EventoHubContent() {
   const params = useParams();
   const router = useRouter();
-  const [evento, setEvento] = useState<EventData | null>(null);
+  const[evento, setEvento] = useState<EventData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const supabase = createBrowserClient(
@@ -36,6 +37,9 @@ export default function EventoHubPage() {
   );
 
   useEffect(() => {
+    // Garante que o ID existe antes de buscar no banco
+    if (!params?.id) return;
+
     const fetchEvento = async () => {
       const { data, error } = await supabase
         .from("events")
@@ -52,7 +56,7 @@ export default function EventoHubPage() {
     };
 
     fetchEvento();
-  }, [params.id, supabase, router]);
+  }, [params, supabase, router]);
 
   if (isLoading) {
     return (
@@ -73,7 +77,7 @@ export default function EventoHubPage() {
             onClick={() => router.push("/dashboard")}
             className="text-zinc-500 hover:text-zinc-300 mb-2 text-sm flex items-center gap-2 transition-colors"
           >
-            ← Voltar
+            ← Voltar ao Dashboard
           </button>
           <h1 className="text-3xl font-bold text-white">{evento.name}</h1>
           <p className="text-[#52ad92] font-medium mt-1">Público Base: {evento.pax.toLocaleString('pt-BR')} pessoas</p>
@@ -115,7 +119,7 @@ export default function EventoHubPage() {
         </div>
       </div>
 
-      {/* Botão de Ação Global (Onde a mágica das 1300 linhas vai acontecer depois) */}
+      {/* Botão de Ação Global */}
       <div className="bg-gradient-to-r from-[#14373E] to-zinc-900 border border-[#138946]/30 rounded-2xl p-8 text-center mt-12">
         <h3 className="text-2xl font-bold text-white mb-2">Dimensionamento Completo</h3>
         <p className="text-zinc-400 mb-6 max-w-2xl mx-auto">
@@ -126,5 +130,18 @@ export default function EventoHubPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+// O Componente Principal agora embrulha o conteúdo no Suspense
+export default function EventoHubPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="w-8 h-8 border-4 border-[#138946] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <EventoHubContent />
+    </Suspense>
   );
 }
