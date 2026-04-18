@@ -51,7 +51,7 @@ export default function RootLayout({
           {/* Footer */}
           <footer className="w-full border-t border-zinc-800 bg-zinc-950 py-6 mt-auto">
             <div className="container mx-auto px-4 text-center text-sm text-zinc-500">
-              &copy; {new Date().getFullYear()} CS Com Eventos - AXON Systems. Todos os direitos reservados.
+              &copy; 2026 CS Com Eventos - AXON Systems. Todos os direitos reservados.
             </div>
           </footer>
 
