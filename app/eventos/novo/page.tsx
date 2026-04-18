@@ -4,17 +4,18 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { useMonetization } from "@/components/providers/MonetizationProvider";
+import { TIER_CONFIG } from "@/types/monetization";
 
 export default function NovoEventoPage() {
   const { profile, isLoading, canCreateEvent } = useMonetization();
   const router = useRouter();
   
-  const[name, setName] = useState("");
+  const [name, setName] = useState("");
   const [pax, setPax] = useState("");
-  const[isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const[activeEventsCount, setActiveEventsCount] = useState(0);
-  const [checkingLimits, setCheckingLimits] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const[errorMsg, setErrorMsg] = useState("");
+  const [activeEventsCount, setActiveEventsCount] = useState(0);
+  const[checkingLimits, setCheckingLimits] = useState(true);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,6 +47,8 @@ export default function NovoEventoPage() {
     e.preventDefault();
     setErrorMsg("");
 
+    if (!profile) return;
+
     if (!canCreateEvent(activeEventsCount)) {
       setErrorMsg("Limite de eventos ativos atingido para o seu plano. Faça upgrade para criar mais eventos simultâneos.");
       return;
@@ -57,9 +60,15 @@ export default function NovoEventoPage() {
       return;
     }
 
+    // NOVA TRAVA: Verifica o limite de PAX do plano ANTES de criar o evento
+    const rules = TIER_CONFIG[profile.tier];
+    if (paxNumber > rules.maxPax) {
+      setErrorMsg(`Seu plano atual (${profile.tier}) permite criar eventos de até ${rules.maxPax.toLocaleString('pt-BR')} pessoas. Faça upgrade para dimensionar eventos maiores.`);
+      return;
+    }
+
     setIsSubmitting(true);
 
-    // Calcula a data de expiração (30 dias para frente)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
@@ -67,7 +76,7 @@ export default function NovoEventoPage() {
       .from("events")
       .insert([
         {
-          user_id: profile?.id,
+          user_id: profile.id,
           name: name,
           pax: paxNumber,
           expires_at: expiresAt.toISOString(),
@@ -80,7 +89,6 @@ export default function NovoEventoPage() {
       setErrorMsg("Erro ao criar o evento. Tente novamente.");
       setIsSubmitting(false);
     } else if (data) {
-      // Redireciona para o Hub do Evento recém-criado
       router.push(`/eventos/${data.id}`);
     }
   };
@@ -114,7 +122,7 @@ export default function NovoEventoPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-lg focus:outline-none focus:border-[#138946] text-white transition-colors"
+              className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-lg focus:outline-none focus:border-[#138946] focus:ring-1 focus:ring-[#138946] text-white transition-all"
               placeholder="Ex: Festival de Inverno 2026"
               required
             />
@@ -126,7 +134,7 @@ export default function NovoEventoPage() {
               type="number"
               value={pax}
               onChange={(e) => setPax(e.target.value)}
-              className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-lg focus:outline-none focus:border-[#138946] text-white transition-colors"
+              className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-lg focus:outline-none focus:border-[#138946] focus:ring-1 focus:ring-[#138946] text-white transition-all"
               placeholder="Ex: 5000"
               required
             />
@@ -136,8 +144,9 @@ export default function NovoEventoPage() {
           </div>
 
           {errorMsg && (
-            <div className="p-4 rounded-lg text-sm bg-red-900/30 text-red-400 border border-red-900/50">
-              {errorMsg}
+            <div className="p-4 rounded-lg text-sm bg-red-900/30 text-red-400 border border-red-900/50 flex items-start gap-3">
+              <span className="text-lg leading-none">⚠️</span>
+              <span>{errorMsg}</span>
             </div>
           )}
 
