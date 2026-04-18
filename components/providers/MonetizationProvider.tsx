@@ -17,7 +17,7 @@ const MonetizationContext = createContext<MonetizationContextType | undefined>(u
 export function MonetizationProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [adState, setAdState] = useState<{ isPlaying: boolean; timeLeft: number; message: string }>({
+  const[adState, setAdState] = useState<{ isPlaying: boolean; timeLeft: number; message: string }>({
     isPlaying: false,
     timeLeft: 0,
     message: "",
@@ -56,7 +56,7 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [supabase]);
+  },[supabase]);
 
   const canCreateEvent = (activeEventsCount: number): boolean => {
     if (!profile) return false;
@@ -99,7 +99,7 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
 
       if (type === "pre") {
         duration = rules.adPreSeconds;
-        msg = "Preparando calculadoras e carregando normas técnicas...";
+        msg = "Carregando módulo e normas técnicas...";
       } else if (type === "post") {
         duration = rules.adPostSeconds;
         msg = "Processando resultados técnicos e dimensionamento...";
@@ -119,9 +119,9 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
         setAdState((prev) => {
           if (prev.timeLeft <= 1) {
             clearInterval(interval);
-            setAdState({ isPlaying: false, timeLeft: 0, message: "" });
             resolve();
-            return prev;
+            // CORREÇÃO: Agora ele força a tela a fechar e zera o tempo
+            return { isPlaying: false, timeLeft: 0, message: "" };
           }
           return { ...prev, timeLeft: prev.timeLeft - 1 };
         });
@@ -136,10 +136,10 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
       {adState.isPlaying && (
         <div className="fixed inset-0 z-[9999] bg-zinc-950/95 backdrop-blur-sm flex flex-col items-center justify-center text-zinc-50 font-sans">
           <div className="max-w-md w-full p-8 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl text-center flex flex-col items-center">
-            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+            <div className="w-12 h-12 border-4 border-[#138946] border-t-transparent rounded-full animate-spin mb-6"></div>
             <h2 className="text-xl font-semibold mb-2 text-white">{adState.message}</h2>
             <p className="text-zinc-400 mb-8">
-              Aguarde <span className="text-blue-400 font-bold text-2xl mx-1">{adState.timeLeft}</span> segundos.
+              Aguarde <span className="text-[#52ad92] font-bold text-2xl mx-1">{adState.timeLeft}</span> segundos.
             </p>
             
             <div className="w-full h-48 bg-zinc-800 rounded-lg border border-zinc-700 flex items-center justify-center relative overflow-hidden">

@@ -6,7 +6,6 @@ import { createBrowserClient } from "@supabase/ssr";
 import { EventData } from "@/types/monetization";
 import { useMonetization } from "@/components/providers/MonetizationProvider";
 
-// Importando diretamente a função de sanitários do seu arquivo
 // @ts-ignore
 import { calcSanitarios } from "@/lib/calculators/calculations";
 
@@ -17,12 +16,11 @@ function CalculadoraSanitariosContent() {
   
   const [evento, setEvento] = useState<EventData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCalculating, setIsCalculating] = useState(false);
+  const[isCalculating, setIsCalculating] = useState(false);
   const [resultado, setResultado] = useState<any>(null);
 
-  // Formulário
   const [duracao, setDuracao] = useState("8");
-  const [proporcao, setProporcao] = useState("0.5"); // Guardando o float direto
+  const[proporcao, setProporcao] = useState("0.5");
   const [openBar, setOpenBar] = useState(false);
 
   const supabase = createBrowserClient(
@@ -60,11 +58,11 @@ function CalculadoraSanitariosContent() {
     }
 
     setIsCalculating(true);
-    await playAd("pre");
+    
+    // Roda o anúncio de 15s ANTES de mostrar o resultado
+    await playAd("post");
 
     try {
-      // Chamando a sua função exata do arquivo calculations.js
-      // Passando os parâmetros que a sua função espera receber
       const res = calcSanitarios({
         pax: evento.pax,
         area: 0,
@@ -86,7 +84,6 @@ function CalculadoraSanitariosContent() {
       alert("Ocorreu um erro ao processar as normas técnicas.");
     }
 
-    await playAd("post");
     setIsCalculating(false);
   };
 
@@ -226,7 +223,6 @@ function CalculadoraSanitariosContent() {
               </div>
             ) : (
               <div className="space-y-3 relative z-10">
-                {/* Lendo diretamente a estrutura que o seu arquivo calculations.js devolve */}
                 <div className="flex justify-between items-center p-4 bg-zinc-950/80 rounded-xl border border-zinc-800/80">
                   <span className="text-zinc-300 font-medium">Cabines Femininas</span>
                   <span className="text-2xl font-black text-white">{resultado.results.cabinesF.value}</span>
@@ -248,7 +244,6 @@ function CalculadoraSanitariosContent() {
                   <span className="text-2xl font-black text-white">{resultado.results.lavatorios.value}</span>
                 </div>
 
-                {/* Alertas do seu arquivo */}
                 {resultado.alerts && resultado.alerts.length > 0 && (
                   <div className="mt-6 p-5 bg-red-950/30 border border-red-900/50 rounded-xl">
                     <h4 className="text-red-400 font-bold mb-3 flex items-center gap-2 text-sm uppercase tracking-wider">
