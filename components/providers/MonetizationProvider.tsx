@@ -1,8 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { createBrowserClient } from "@supabase/ssr";
-import { Profile, EventData, TIER_CONFIG, UserTier } from "@/types/monetization";
+import { Profile, EventData, TIER_CONFIG } from "@/types/monetization";
 
 interface MonetizationContextType {
   profile: Profile | null;
@@ -16,12 +16,15 @@ const MonetizationContext = createContext<MonetizationContextType | undefined>(u
 
 export function MonetizationProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const[adState, setAdState] = useState<{ isPlaying: boolean; timeLeft: number; message: string }>({
-    isPlaying: false,
-    timeLeft: 0,
-    message: "",
-  });
+  const[isLoading, setIsLoading] = useState(true);
+  
+  // Estados separados e simplificados para o anúncio
+  const [isAdPlaying, setIsAdPlaying] = useState(false);
+  const[adTimeLeft, setAdTimeLeft] = useState(0);
+  const [adMessage, setAdMessage] = useState("");
+  
+  // Usamos um Ref para guardar a função que "destrava" o sistema quando o anúncio acaba
+  const resolvePromiseRef = useRef<(() => void) | null>(null);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,7 +59,29 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
     return () => {
       authListener.subscription.unsubscribe();
     };
-  },[supabase]);
+  }, [supabase]);
+
+  // O MOTOR DO CRONÔMETRO (Totalmente isolado e seguro)
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    
+    if (isAdPlaying && adTimeLeft > 0) {
+      // Se está rodando e tem tempo, diminui 1 segundo
+      timer = setTimeout(() => {
+        setAdTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (isAdPlaying && adTimeLeft === 0) {
+      // Se o tempo acabou, fecha a tela e avisa o sistema para continuar
+      setIsAdPlaying(false);
+      if (resolvePromiseRef.current) {
+        resolvePromiseRef.current();
+        resolvePromiseRef.current = null; // Limpa a referência
+      }
+    }
+
+    return () => clearTimeout(timer); // Limpa o timer se o componente desmontar
+  },[isAdPlaying, adTimeLeft]);
+
 
   const canCreateEvent = (activeEventsCount: number): boolean => {
     if (!profile) return false;
@@ -81,6 +106,7 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
     return { allowed: true };
   };
 
+  // A CHAMADA DO ANÚNCIO (Agora ela não mexe com setTimeout, só muda o estado)
   const playAd = (type: "pre" | "post" | "pdf"): Promise<void> => {
     return new Promise((resolve) => {
       if (!profile) {
@@ -90,7 +116,7 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
 
       const rules = TIER_CONFIG[profile.tier];
       if (!rules.hasAds) {
-        resolve();
+        resolve(); // Se for PRO ou Tier 5, passa direto instantaneamente
         return;
       }
 
@@ -113,19 +139,15 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
         return;
       }
 
-      setAdState({ isPlaying: true, timeLeft: duration, message: msg });
-
-      const interval = setInterval(() => {
-        setAdState((prev) => {
-          if (prev.timeLeft <= 1) {
-            clearInterval(interval);
-            resolve();
-            // CORREÇÃO: Agora ele força a tela a fechar e zera o tempo
-            return { isPlaying: false, timeLeft: 0, message: "" };
-          }
-          return { ...prev, timeLeft: prev.timeLeft - 1 };
-        });
-      }, 1000);
+      // Prepara o anúncio
+      setAdMessage(msg);
+      setAdTimeLeft(duration);
+      
+      // Guarda a chave para destravar o sistema quando acabar
+      resolvePromiseRef.current = resolve;
+      
+      // Dá o play
+      setIsAdPlaying(true);
     });
   };
 
@@ -133,13 +155,14 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
     <MonetizationContext.Provider value={{ profile, isLoading, canCreateEvent, canCalculate, playAd }}>
       {children}
       
-      {adState.isPlaying && (
+      {/* TELA DE ANÚNCIO */}
+      {isAdPlaying && (
         <div className="fixed inset-0 z-[9999] bg-zinc-950/95 backdrop-blur-sm flex flex-col items-center justify-center text-zinc-50 font-sans">
           <div className="max-w-md w-full p-8 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl text-center flex flex-col items-center">
             <div className="w-12 h-12 border-4 border-[#138946] border-t-transparent rounded-full animate-spin mb-6"></div>
-            <h2 className="text-xl font-semibold mb-2 text-white">{adState.message}</h2>
+            <h2 className="text-xl font-semibold mb-2 text-white">{adMessage}</h2>
             <p className="text-zinc-400 mb-8">
-              Aguarde <span className="text-[#52ad92] font-bold text-2xl mx-1">{adState.timeLeft}</span> segundos.
+              Aguarde <span className="text-[#52ad92] font-bold text-2xl mx-1">{adTimeLeft}</span> segundos.
             </p>
             
             <div className="w-full h-48 bg-zinc-800 rounded-lg border border-zinc-700 flex items-center justify-center relative overflow-hidden">
