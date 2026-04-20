@@ -1,27 +1,38 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
-import { Profile, EventData, TIER_CONFIG, UserTier } from "@/types/monetization";
+import { EventData } from "@/types/monetization";
+import { useMonetization } from "@/components/providers/MonetizationProvider";
 
-interface MonetizationContextType {
-  profile: Profile | null;
-  isLoading: boolean;
-  canCreateEvent: (activeEventsCount: number) => boolean;
-  canCalculate: (event: EventData) => { allowed: boolean; reason?: string };
-  playAd: (type: "pre" | "post" | "pdf") => Promise<void>;
-}
+const CALCULADORAS = [
+  { id: "sanitarios",    nome: "Sanitários",     descricao: "NBR 13969, NR-24 e NBR 9050",           icone: "🚻", cor: "#2979FF" },
+  { id: "publico",       nome: "Público",         descricao: "Lotação e densidade por área",           icone: "👥", cor: "#138946" },
+  { id: "seguranca",     nome: "Segurança",        descricao: "Portaria DPF 18.045/2023",               icone: "🛡️", cor: "#D4AF37" },
+  { id: "brigada",       nome: "Brigada",          descricao: "IT-17 CBPMESP / NT 5-04 CBMERJ",        icone: "🔥", cor: "#FF5722" },
+  { id: "equipeMedica",  nome: "Equipe Médica",    descricao: "Portaria MS 2.048/2002",                 icone: "🏥", cor: "#E91E63" },
+  { id: "residuos",      nome: "Resíduos",         descricao: "NBR 16366 e PNRS",                       icone: "♻️", cor: "#4CAF50" },
+  { id: "gerador",       nome: "Gerador",          descricao: "NBR 5410 e AES Standards",               icone: "⚡", cor: "#FFC107" },
+  { id: "sonorizacao",   nome: "Sonorização",      descricao: "AES Standards / NR-15",                  icone: "🔊", cor: "#9C27B0" },
+  { id: "recepcao",      nome: "Recepção",         descricao: "Controle de acesso e catracas",          icone: "🎫", cor: "#00BCD4" },
+  { id: "gelo",          nome: "Gelo",             descricao: "Senac Eventos / ABRAPE",                 icone: "🧊", cor: "#03A9F4" },
+  { id: "insumos",       nome: "Insumos",          descricao: "ABRAPE e NR-24",                         icone: "📦", cor: "#795548" },
+  { id: "alimentacao",   nome: "Alimentação",      descricao: "NR-24 24.3.1",                           icone: "🍽️", cor: "#FF9800" },
+  { id: "bebidas",       nome: "Bebidas",          descricao: "Abrasel / ABRAPE",                       icone: "🍺", cor: "#FFEB3B" },
+  { id: "ingressos",     nome: "Ingressos",        descricao: "Bilheteria e receita por setor",         icone: "🎟️", cor: "#F44336" },
+  { id: "financeiro",    nome: "Financeiro",       descricao: "DRE simplificado e break-even",          icone: "💰", cor: "#4CAF50" },
+  { id: "credenciamento",nome: "Credenciamento",   descricao: "Zonas de acesso e crachás",              icone: "📋", cor: "#607D8B" },
+];
 
-const MonetizationContext = createContext<MonetizationContextType | undefined>(undefined);
+export default function EventoHubPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { canCalculate, playAd } = useMonetization();
 
-export function MonetizationProvider({ children }: { children: React.ReactNode }) {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [evento, setEvento] = useState<EventData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const[adState, setAdState] = useState<{ isPlaying: boolean; timeLeft: number; message: string }>({
-    isPlaying: false,
-    timeLeft: 0,
-    message: "",
-  });
+  const [navegando, setNavegando] = useState(false);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,134 +40,103 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
   );
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      setIsLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
-
-        if (!error && data) {
-          setProfile(data as Profile);
-        }
-      }
+    if (!params?.id) return;
+    const fetchEvento = async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .eq("id", params.id)
+        .single();
+      if (!error && data) setEvento(data as EventData);
       setIsLoading(false);
     };
+    fetchEvento();
+  }, [params]);
 
-    fetchProfile();
+  const handleAbrirCalculadora = async (calcId: string) => {
+    if (!evento || navegando) return;
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
-      fetchProfile();
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  },[supabase]);
-
-  const canCreateEvent = (activeEventsCount: number): boolean => {
-    if (!profile) return false;
-    const rules = TIER_CONFIG[profile.tier];
-    return activeEventsCount < rules.maxEvents;
-  };
-
-  const canCalculate = (event: EventData): { allowed: boolean; reason?: string } => {
-    if (!profile) return { allowed: false, reason: "Usuário não autenticado. Faça login para continuar." };
-
-    const rules = TIER_CONFIG[profile.tier];
-    
-    if (event.pax > rules.maxPax) {
-      return { allowed: false, reason: `Seu plano atual permite dimensionar eventos para até ${rules.maxPax} pessoas. Faça upgrade do seu plano.` };
+    // Verifica se pode calcular antes de mostrar o anúncio
+    const check = canCalculate(evento);
+    if (!check.allowed) {
+      alert(check.reason);
+      return;
     }
 
-    const totalAllowedUses = rules.baseUses + profile.extra_credits;
-    if (event.uses_count >= totalAllowedUses) {
-      return { allowed: false, reason: "Limite de cálculos atingido para este evento. Adquira créditos avulsos ou faça upgrade do seu plano." };
-    }
+    setNavegando(true);
 
-    return { allowed: true };
+    // Pré-anúncio de 5s — só aqui, nunca na página da calculadora
+    await playAd("pre");
+
+    // Navega para a calculadora após o anúncio fechar
+    router.push(`/eventos/${params.id}/calculadoras/${calcId}`);
   };
 
-  const playAd = (type: "pre" | "post" | "pdf"): Promise<void> => {
-    return new Promise((resolve) => {
-      if (!profile) {
-        resolve();
-        return;
-      }
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="w-8 h-8 border-4 border-[#138946] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
-      const rules = TIER_CONFIG[profile.tier];
-      if (!rules.hasAds) {
-        resolve();
-        return;
-      }
-
-      let duration = 0;
-      let msg = "";
-
-      if (type === "pre") {
-        duration = rules.adPreSeconds;
-        msg = "Carregando módulo e normas técnicas...";
-      } else if (type === "post") {
-        duration = rules.adPostSeconds;
-        msg = "Processando resultados técnicos e dimensionamento...";
-      } else if (type === "pdf") {
-        duration = rules.adPdfSeconds;
-        msg = "Gerando PDF com memorial descritivo completo...";
-      }
-
-      if (duration <= 0) {
-        resolve();
-        return;
-      }
-
-      setAdState({ isPlaying: true, timeLeft: duration, message: msg });
-
-      const interval = setInterval(() => {
-        setAdState((prev) => {
-          if (prev.timeLeft <= 1) {
-            clearInterval(interval);
-            resolve();
-            // CORREÇÃO: Agora ele força a tela a fechar e zera o tempo
-            return { isPlaying: false, timeLeft: 0, message: "" };
-          }
-          return { ...prev, timeLeft: prev.timeLeft - 1 };
-        });
-      }, 1000);
-    });
-  };
+  if (!evento) return null;
 
   return (
-    <MonetizationContext.Provider value={{ profile, isLoading, canCreateEvent, canCalculate, playAd }}>
-      {children}
-      
-      {adState.isPlaying && (
-        <div className="fixed inset-0 z-[9999] bg-zinc-950/95 backdrop-blur-sm flex flex-col items-center justify-center text-zinc-50 font-sans">
-          <div className="max-w-md w-full p-8 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl text-center flex flex-col items-center">
-            <div className="w-12 h-12 border-4 border-[#138946] border-t-transparent rounded-full animate-spin mb-6"></div>
-            <h2 className="text-xl font-semibold mb-2 text-white">{adState.message}</h2>
-            <p className="text-zinc-400 mb-8">
-              Aguarde <span className="text-[#52ad92] font-bold text-2xl mx-1">{adState.timeLeft}</span> segundos.
+    <div className="max-w-6xl mx-auto mt-6 pb-12 px-4">
+      <button
+        onClick={() => router.push("/dashboard")}
+        className="text-zinc-400 hover:text-white mb-6 text-sm flex items-center gap-2 transition-colors"
+      >
+        ← Voltar ao Dashboard
+      </button>
+
+      {/* Cabeçalho do evento */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-8">
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight mb-1">
+              {evento.name}
+            </h1>
+            <p className="text-zinc-400 text-sm">
+              {evento.pax.toLocaleString("pt-BR")} pessoas · {evento.uses_count} cálculo(s) realizado(s)
             </p>
-            
-            <div className="w-full h-48 bg-zinc-800 rounded-lg border border-zinc-700 flex items-center justify-center relative overflow-hidden">
-              <span className="text-sm text-zinc-500 font-medium tracking-widest uppercase">Espaço Publicitário</span>
-            </div>
-            <p className="text-xs text-zinc-600 mt-4">AXON Calculadoras - CS Com Eventos</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 px-3 py-1.5 rounded-full font-medium">
+              {evento.pax.toLocaleString("pt-BR")} PAX
+            </span>
           </div>
         </div>
-      )}
-    </MonetizationContext.Provider>
+      </div>
+
+      {/* Grid de calculadoras */}
+      <div className="mb-6">
+        <h2 className="text-lg font-bold text-white mb-1">Módulos de Dimensionamento</h2>
+        <p className="text-zinc-500 text-sm mb-6">
+          Clique em uma calculadora para iniciar o dimensionamento. Um breve anúncio será exibido antes de cada módulo.
+        </p>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {CALCULADORAS.map((calc) => (
+            <button
+              key={calc.id}
+              onClick={() => handleAbrirCalculadora(calc.id)}
+              disabled={navegando}
+              className="group bg-zinc-900 border border-zinc-800 hover:border-zinc-600 rounded-2xl p-5 text-left transition-all hover:bg-zinc-800/80 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4 transition-transform group-hover:scale-110"
+                style={{ backgroundColor: `${calc.cor}15`, border: `1px solid ${calc.cor}30` }}
+              >
+                {calc.icone}
+              </div>
+              <div className="text-white font-semibold text-sm mb-1">{calc.nome}</div>
+              <div className="text-zinc-500 text-xs leading-snug">{calc.descricao}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
-
-export const useMonetization = () => {
-  const context = useContext(MonetizationContext);
-  if (context === undefined) {
-    throw new Error("useMonetization deve ser usado dentro de um MonetizationProvider");
-  }
-  return context;
-};
