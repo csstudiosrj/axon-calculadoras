@@ -22,7 +22,7 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
   const [adTimeLeft, setAdTimeLeft] = useState(0);
   const [adMessage, setAdMessage] = useState("");
 
-  // Ref para guardar o resolve da Promise ativa — evita closure stale
+  // Ref para guardar o resolve da Promise ativa â€” evita closure stale
   const resolveRef = useRef<(() => void) | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -70,14 +70,14 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
   };
 
   const canCalculate = (event: EventData): { allowed: boolean; reason?: string } => {
-    if (!profile) return { allowed: false, reason: "Usuário não autenticado." };
+    if (!profile) return { allowed: false, reason: "UsuÃ¡rio nÃ£o autenticado." };
 
     const rules = TIER_CONFIG[profile.tier];
 
     if (event.pax > rules.maxPax) {
       return {
         allowed: false,
-        reason: `Seu plano permite até ${rules.maxPax.toLocaleString("pt-BR")} pessoas. Faça upgrade.`,
+        reason: `Seu plano permite atÃ© ${rules.maxPax.toLocaleString("pt-BR")} pessoas. FaÃ§a upgrade.`,
       };
     }
 
@@ -85,7 +85,7 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
     if (event.uses_count >= totalAllowedUses) {
       return {
         allowed: false,
-        reason: "Limite de cálculos atingido. Adquira créditos ou faça upgrade.",
+        reason: "Limite de cÃ¡lculos atingido. Adquira crÃ©ditos ou faÃ§a upgrade.",
       };
     }
 
@@ -93,7 +93,7 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
   };
 
   // Decrementa uso no banco: incrementa uses_count no evento
-  // e, se estava usando crédito extra, decrementa extra_credits no perfil
+  // e, se estava usando crÃ©dito extra, decrementa extra_credits no perfil
   const decrementUse = useCallback(async (eventId: string, currentUsesCount: number) => {
     if (!profile) return;
 
@@ -105,7 +105,7 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
       .update({ uses_count: currentUsesCount + 1 })
       .eq("id", eventId);
 
-    // Se o uso atual ultrapassou os usos base, estava consumindo crédito extra
+    // Se o uso atual ultrapassou os usos base, estava consumindo crÃ©dito extra
     if (currentUsesCount >= rules.baseUses && profile.extra_credits > 0) {
       const newCredits = profile.extra_credits - 1;
       await supabase
@@ -131,15 +131,15 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
         pdf: rules.adPdfSeconds,
       };
       const messageMap = {
-        pre: "Carregando módulo e normas técnicas...",
-        post: "Processando resultados técnicos e dimensionamento...",
+        pre: "Carregando mÃ³dulo e normas tÃ©cnicas...",
+        post: "Processando resultados tÃ©cnicos e dimensionamento...",
         pdf: "Gerando PDF com memorial descritivo completo...",
       };
 
       const duration = durationMap[type];
       if (duration <= 0) { resolve(); return; }
 
-      // Garante que não há interval anterior rodando
+      // Garante que nÃ£o hÃ¡ interval anterior rodando
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -150,7 +150,7 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
       setAdTimeLeft(duration);
       setAdVisible(true);
 
-      // Usa uma variável local para o contador — sem depender do state
+      // Usa uma variÃ¡vel local para o contador â€” sem depender do state
       let timeRemaining = duration;
 
       intervalRef.current = setInterval(() => {
@@ -193,7 +193,7 @@ export function MonetizationProvider({ children }: { children: React.ReactNode }
             </p>
             <div className="w-full h-48 bg-zinc-800 rounded-lg border border-zinc-700 flex items-center justify-center">
               <span className="text-sm text-zinc-500 font-medium tracking-widest uppercase">
-                Espaço Publicitário
+                EspaÃ§o PublicitÃ¡rio
               </span>
             </div>
             <p className="text-xs text-zinc-600 mt-4">AXON Calculadoras - CS Com Eventos</p>
