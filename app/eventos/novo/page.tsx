@@ -9,13 +9,13 @@ import { TIER_CONFIG } from "@/types/monetization";
 export default function NovoEventoPage() {
   const { profile, isLoading, canCreateEvent } = useMonetization();
   const router = useRouter();
-  
+
   const [name, setName] = useState("");
   const [pax, setPax] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const[errorMsg, setErrorMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
   const [activeEventsCount, setActiveEventsCount] = useState(0);
-  const[checkingLimits, setCheckingLimits] = useState(true);
+  const [checkingLimits, setCheckingLimits] = useState(true);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,7 +25,7 @@ export default function NovoEventoPage() {
   useEffect(() => {
     const checkActiveEvents = async () => {
       if (!profile) return;
-      
+
       const { count, error } = await supabase
         .from("events")
         .select("*", { count: "exact", head: true })
@@ -60,10 +60,9 @@ export default function NovoEventoPage() {
       return;
     }
 
-    // NOVA TRAVA: Verifica o limite de PAX do plano ANTES de criar o evento
     const rules = TIER_CONFIG[profile.tier];
     if (paxNumber > rules.maxPax) {
-      setErrorMsg(`Seu plano atual (${profile.tier}) permite criar eventos de até ${rules.maxPax.toLocaleString('pt-BR')} pessoas. Faça upgrade para dimensionar eventos maiores.`);
+      setErrorMsg(`Seu plano atual (${profile.tier}) permite criar eventos de até ${rules.maxPax.toLocaleString("pt-BR")} pessoas. Faça upgrade para dimensionar eventos maiores.`);
       return;
     }
 
@@ -74,14 +73,7 @@ export default function NovoEventoPage() {
 
     const { data, error } = await supabase
       .from("events")
-      .insert([
-        {
-          user_id: profile.id,
-          name: name,
-          pax: paxNumber,
-          expires_at: expiresAt.toISOString(),
-        }
-      ])
+      .insert([{ user_id: profile.id, name, pax: paxNumber, expires_at: expiresAt.toISOString() }])
       .select()
       .single();
 
@@ -96,7 +88,7 @@ export default function NovoEventoPage() {
   if (isLoading || checkingLimits) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="w-8 h-8 border-4 border-[#138946] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#138946] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -104,11 +96,14 @@ export default function NovoEventoPage() {
   return (
     <div className="max-w-2xl mx-auto mt-10">
       <div className="mb-8">
-        <button 
+        <button
           onClick={() => router.push("/dashboard")}
           className="text-zinc-400 hover:text-white mb-4 text-sm flex items-center gap-2 transition-colors"
         >
-          ← Voltar ao Dashboard
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+          Voltar ao Dashboard
         </button>
         <h1 className="text-3xl font-bold text-white mb-2">Criar Novo Evento</h1>
         <p className="text-zinc-400">Configure os dados base para iniciar o dimensionamento.</p>
@@ -145,7 +140,11 @@ export default function NovoEventoPage() {
 
           {errorMsg && (
             <div className="p-4 rounded-lg text-sm bg-red-900/30 text-red-400 border border-red-900/50 flex items-start gap-3">
-              <span className="text-lg leading-none">⚠️</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
               <span>{errorMsg}</span>
             </div>
           )}
