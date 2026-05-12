@@ -7,7 +7,7 @@ import { Header } from "@/components/layout/Header";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AXON Calculadoras | CS Com Eventos",
+  title: "ARXUM Calculadoras | CS Com Eventos",
   description: "Sistema B2B/B2C de dimensionamento técnico para produtores de eventos.",
 };
 
