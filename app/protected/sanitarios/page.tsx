@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { calcSanitarios } from "@/lib/calculations";
-import type { SanitariosParams, SanitariosResults, AlertItem } from "@/lib/calculations";
+import { calcSanitarios } from "@/lib/calculators/calculations";
+import type { SanitariosParams, SanitariosResults, AlertItem } from "@/lib/calculators/calculations";
 
 // ─── helpers de estilo ────────────────────────────────────────────────────────
 
