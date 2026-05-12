@@ -664,7 +664,7 @@ function mergeNorms(normsConfig?: Partial<NormsConfig>): NormsConfig {
   const merged = { ...DEFAULT_NORMS } as NormsConfig;
   for (const key of Object.keys(normsConfig) as Array<keyof NormsConfig>) {
     if (normsConfig[key] !== undefined) {
-      (merged as Record<string, unknown>)[key] = {
+      (merged as unknown as Record<string, unknown>)[key] = {
         ...(DEFAULT_NORMS[key] as object),
         ...(normsConfig[key] as object),
       };
