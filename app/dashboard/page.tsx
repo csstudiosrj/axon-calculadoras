@@ -25,7 +25,7 @@ export default function DashboardPage() {
         const { data, error } = await supabase
           .from("events")
           .select("*")
-          .eq("user_id", profile.id)
+          .eq("user_id", profile?.id)
           .order("created_at", { ascending: false });
 
         if (!error && data) {
