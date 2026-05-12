@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { useMonetization } from "@/components/providers/MonetizationProvider";
-import { TIER_CONFIG } from "@/types/monetization";
+import { TIER_CONFIG, UserTier } from "@/types/monetization";
 
 export default function NovoEventoPage() {
   const { profile, isLoading, canCreateEvent } = useMonetization();
@@ -60,7 +60,7 @@ export default function NovoEventoPage() {
       return;
     }
 
-    const rules = TIER_CONFIG[profile.tier as any];
+    const rules = TIER_CONFIG[profile.tier as UserTier];
     if (paxNumber > rules.maxPax) {
       setErrorMsg(`Seu plano atual (${profile.tier}) permite criar eventos de até ${rules.maxPax.toLocaleString("pt-BR")} pessoas. Faça upgrade para dimensionar eventos maiores.`);
       return;
