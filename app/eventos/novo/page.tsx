@@ -60,7 +60,7 @@ export default function NovoEventoPage() {
       return;
     }
 
-    const rules = TIER_CONFIG[profile.tier];
+    const rules = TIER_CONFIG[profile.tier as any];
     if (paxNumber > rules.maxPax) {
       setErrorMsg(`Seu plano atual (${profile.tier}) permite criar eventos de até ${rules.maxPax.toLocaleString("pt-BR")} pessoas. Faça upgrade para dimensionar eventos maiores.`);
       return;
