@@ -1,4 +1,4 @@
-"use client";
+content = '''"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -121,3 +121,9 @@ export default function DashboardPage() {
     </div>
   );
 }
+'''
+
+with open('./app/dashboard/page.tsx', 'w') as f:
+    f.write(content)
+
+print("ok")
