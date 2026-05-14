@@ -43,7 +43,7 @@ function CalculadoraContent() {
   const [duracao, setDuracao] = useState("8");
   const [proporcao, setProporcao] = useState("0.5");
   const [openBar, setOpenBar] = useState(false);
-  const [estado, setEstado] = useState("federal");
+  const [estado: estado as any, setEstado] = useState("federal");
   const [pcdPercentual, setPcdPercentual] = useState("5");
 
   const supabase = createBrowserClient(
@@ -82,7 +82,7 @@ function CalculadoraContent() {
       duracaoHoras: parseFloat(duracao),
       proporcaoHomens: parseFloat(proporcao),
       openBar,
-      estado,
+      estado: estado as any,
       pcdPercentual: parseFloat(pcdPercentual) / 100,
     };
 
