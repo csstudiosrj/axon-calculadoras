@@ -47,7 +47,7 @@ function CalculadoraContent() {
     fd.forEach((v, k) => { if (k !== "area") calcParams[k] = isNaN(Number(v)) ? v : Number(v); });
 
     try {
-      const res = calcIngressos(calcParams);
+      const res = (calcIngressos as any)(calcParams as any);
       setResultado(res);
       setSalvando(true);
       const { data: { session } } = await supabase.auth.getSession();

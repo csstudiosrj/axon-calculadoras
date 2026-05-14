@@ -87,7 +87,7 @@ function CalculadoraContent() {
     };
 
     try {
-      const res = calcSanitarios(calcParams) as SanitariosResult;
+      const res = (calcSanitarios(calcParams) as SanitariosResult;
       setResultado(res);
 
       // Salva no banco
