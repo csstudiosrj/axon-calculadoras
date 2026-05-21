@@ -1,57 +1,61 @@
-import { DeployButton } from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import { AuthButton } from "@/components/auth-button";
-import { Hero } from "@/components/hero";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { ConnectSupabaseSteps } from "@/components/tutorial/connect-supabase-steps";
-import { SignUpUserSteps } from "@/components/tutorial/sign-up-user-steps";
-import { hasEnvVars } from "@/lib/utils";
+// src/app/page.tsx
 import Link from "next/link";
-import { Suspense } from "react";
 
-export default function Home() {
+export default function CalculadorasHome() {
   return (
-    <main className="min-h-screen flex flex-col items-center">
-      <div className="flex-1 w-full flex flex-col gap-20 items-center">
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-          <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
-            <div className="flex gap-5 items-center font-semibold">
-              <Link href={"/"}>Next.js Supabase Starter</Link>
-              <div className="flex items-center gap-2">
-                <DeployButton />
-              </div>
-            </div>
-            {!hasEnvVars ? (
-              <EnvVarWarning />
-            ) : (
-              <Suspense>
-                <AuthButton />
-              </Suspense>
-            )}
-          </div>
-        </nav>
-        <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5">
-          <Hero />
-          <main className="flex-1 flex flex-col gap-6 px-4">
-            <h2 className="font-medium text-xl mb-4">Next steps</h2>
-            {hasEnvVars ? <SignUpUserSteps /> : <ConnectSupabaseSteps />}
-          </main>
+    <main className="min-h-screen bg-[var(--color-axon-bg,#0d0807)] text-white flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-[var(--color-axon-panel,#1a1413)] border border-[var(--color-axon-border,#2e2825)] rounded-2xl p-8 text-center shadow-2xl space-y-8">
+        
+        {/* Cabeçalho do Sistema */}
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold tracking-tight text-white">
+            ARXUM <span className="text-[var(--color-axon-gold,#C5A059)]">Calculadoras</span>
+          </h1>
+          <p className="text-sm text-gray-400">
+            Ferramentas inteligentes de orçamento, métricas e precificação.
+          </p>
         </div>
 
-        <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
-          <p>
-            Powered by{" "}
-            <a
-              href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-              target="_blank"
-              className="font-bold hover:underline"
-              rel="noreferrer"
-            >
-              Supabase
-            </a>
-          </p>
-          <ThemeSwitcher />
-        </footer>
+        {/* CTA PRINCIPAL: Botão de Acesso Destacado */}
+        <div className="py-2">
+          <Link
+            href="/login"
+            className="w-full block bg-[var(--color-axon-gold,#C5A059)] hover:bg-[#d9b36a] text-black font-bold px-6 py-4 rounded-xl transition-all shadow-lg shadow-[var(--color-axon-gold-dim,rgba(197,160,89,0.12))] transform hover:-translate-y-0.5 text-lg"
+          >
+            Acessar Calculadoras
+          </Link>
+        </div>
+
+        {/* Divisor Sutil */}
+        <div className="relative flex py-2 items-center">
+          <div className="flex-grow border-t border-[var(--color-axon-border,#2e2825)]"></div>
+          <span className="flex-shrink mx-4 text-xs text-gray-500 tracking-wider uppercase">Outros Sistemas</span>
+          <div className="flex-grow border-t border-[var(--color-axon-border,#2e2825)]"></div>
+        </div>
+
+        {/* Links Menores para os Outros Sistemas */}
+        <nav className="grid grid-cols-2 gap-3 text-xs">
+          <a href="/" className="bg-[var(--color-axon-bg,#0d0807)] hover:bg-black/40 border border-[var(--color-axon-border,#2e2825)] text-gray-400 hover:text-white py-2 px-3 rounded-lg transition-all text-center">
+            Home Principal
+          </a>
+          <a href="/fest" className="bg-[var(--color-axon-bg,#0d0807)] hover:bg-black/40 border border-[var(--color-axon-border,#2e2825)] text-gray-400 hover:text-white py-2 px-3 rounded-lg transition-all text-center">
+            Fest
+          </a>
+          <a href="/suite" className="bg-[var(--color-axon-bg,#0d0807)] hover:bg-black/40 border border-[var(--color-axon-border,#2e2825)] text-gray-400 hover:text-white py-2 px-3 rounded-lg transition-all text-center">
+            Suite
+          </a>
+          <a href="/crew" className="bg-[var(--color-axon-bg,#0d0807)] hover:bg-black/40 border border-[var(--color-axon-border,#2e2825)] text-gray-400 hover:text-white py-2 px-3 rounded-lg transition-all text-center">
+            Crew
+          </a>
+          <a href="/poseidon" className="col-span-2 bg-[var(--color-axon-bg,#0d0807)] hover:bg-black/40 border border-[var(--color-axon-border,#2e2825)] text-gray-400 hover:text-white py-2 px-3 rounded-lg transition-all text-center">
+            Poseidon
+          </a>
+        </nav>
+
+        {/* Rodapé institucional */}
+        <p className="text-[10px] text-gray-600 tracking-wide pt-2">
+          © 2026 ARXUM Sistemas — Todos os direitos reservados.
+        </p>
       </div>
     </main>
   );
